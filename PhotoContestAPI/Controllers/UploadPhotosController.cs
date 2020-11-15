@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Routing.Constraints;
 using Microsoft.Azure.Cosmos.Linq;
 using PhotoContestAPI.Services;
 using PhotoContestAPI.Models;
+using TinifyAPI;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -29,7 +30,7 @@ namespace PhotoContestAPI.Controllers
 
         // GET: api/<UploadPhotosController>
         [HttpGet]
-        public async Task<PhotoData> Get()
+        public async Task<List<PhotoData>> Get()
         {
             //byte[] imageArray = System.IO.File.ReadAllBytes("C:\\Users\\rober\\test-api\\images\\test-pic.jpg");
             //string base64ImageRepresentation = Convert.ToBase64String(imageArray);
@@ -37,11 +38,11 @@ namespace PhotoContestAPI.Controllers
 
             var results = await _cosmosDbService.GetItemsAsync("select * from c");
 
-            var resultsList = results.ToList();
+            var resultsToList = results.ToList();
 
-            var result = resultsList[resultsList.Count - 1];
+            //var result = resultsList[resultsList.Count - 1];
 
-            return result;
+            return resultsToList;
         }
 
         // GET api/<UploadPhotosController>/5
@@ -54,40 +55,123 @@ namespace PhotoContestAPI.Controllers
             return test;
         }
 
+        // GET api/<UploadPhotosController>/last
+        [Route("/api/uploadphotos/last")]
+        public async Task<PhotoData> GetItemsAsync()
+        {
+            var results = await _cosmosDbService.GetItemsAsync("select * from c");
+
+            var resultsToList = results.ToList();
+
+            var result = resultsToList[resultsToList.Count - 1];
+
+            return result;
+        }
+
+        // GET api/<UploadPhotosController>/page/4
+        [Route("/api/uploadphotos/page/{pageNumber}")]
+        [HttpGet("{pageNumber}")]
+        public async Task<List<PhotoData>> GetItemsAsync(int pageNumber)
+        {
+            var results = await _cosmosDbService.GetItemsAsync("select * from c");
+
+            results = results.Reverse().ToList();
+
+            var skip = 6 * (pageNumber - 1);
+
+            List<PhotoData> photoList = new List<PhotoData>();
+            for (var i = 0; i <= (results.Count() - 1); i++)
+            {
+                if (i >= skip)
+                {
+                    photoList.Add(results.ElementAt(i));
+                }
+
+                if (photoList.Count() == 6)
+                {
+                    break;
+                }
+            }
+
+            return photoList;
+        }
+
+        // GET api/<UploadPhotosController>/action/count
+        [Route("/api/uploadphotos/count")]
+        public async Task<int> GetCountAsync()
+        {
+            var results = await _cosmosDbService.GetItemsAsync("select * from c");
+
+            return results.Count();
+        }
+
         // POST api/<UploadPhotosController>
         [HttpPost]
-        public async void Post([FromForm] IFormFile file, [FromForm] string index)
+        public async Task<PhotoData> Post([FromForm] IFormFile file, [FromForm] string index, [FromForm] string author)
         {
             var fileName = file.FileName;
 
             var convertedIndex = Convert.ToInt32(index) + 1;
 
-            byte[] fileBytes;
-            //string byteArrayToString;
-            using (var ms = new MemoryStream())
+            PhotoData photoDataObject = new PhotoData();
+
+            try
             {
-                file.CopyTo(ms);
-                fileBytes = ms.ToArray();
-                //byteArrayToString = Convert.ToBase64String(fileBytes);
-                // act on the Base64 data
+                byte[] fileBytes;
+                byte[] resultData;
+                //string byteArrayToString;
+                using (var ms = new MemoryStream())
+                {
+                    file.CopyTo(ms);
+
+                    fileBytes = ms.ToArray();
+
+                    Tinify.Key = "NC86NBC6Qrjhp2GtQxC6k0l8Dbv17NZc"; //API Key
+                    resultData = await Tinify.FromBuffer(fileBytes).ToBuffer(); //Compresses image only
+
+                    //byteArrayToString = Convert.ToBase64String(fileBytes);
+                    // act on the Base64 data
+                }
+
+                var mimeType = file.ContentType;
+
+                var blobStorageService = new BlobStorageService();
+
+                var url = blobStorageService.UploadFileToBlob(fileName, resultData, mimeType);
+
+                var source = Tinify.FromUrl(url);
+
+                var resized = source.Resize(new
+                {
+                    method = "scale",
+                    width = 568
+                });
+                var resultDataResized = await resized.ToBuffer();
+                var url2 = blobStorageService.UploadFileToBlob(fileName, resultDataResized, mimeType);
+
+                var photoData = new PhotoData
+                {
+                    Id = convertedIndex.ToString(),
+                    Author = author,
+                    Description = "Test " + convertedIndex.ToString(),
+                    ImgUrlHighQuality = url,
+                    ImgUrlLowQuality = url2,
+                    Votes = 0,
+                    SubmitDt = DateTime.Now,
+                    Partition = 1
+                };
+
+                await _cosmosDbService.AddItemAsync(photoData);
+
+                //get the newly created PhotoData object to send back in POST reponse
+                photoDataObject = await _cosmosDbService.GetItemAsync(convertedIndex.ToString());
+            }
+            catch (System.Exception ex)
+            {
+                Console.WriteLine(ex);
             }
 
-            var mimeType = file.ContentType;
-
-            var blobStorageService = new BlobStorageService();
-
-            var url = blobStorageService.UploadFileToBlob(fileName, fileBytes, mimeType);
-
-            var photoData = new PhotoData
-            {
-                Id = convertedIndex.ToString(),
-                Author = "Robert",
-                Description = "Test " + convertedIndex.ToString(),
-                ImgUrl = url,
-                Partition = 1
-            };
-
-            await _cosmosDbService.AddItemAsync(photoData);
+            return photoDataObject;
         }
 
         // PUT api/<UploadPhotosController>/5

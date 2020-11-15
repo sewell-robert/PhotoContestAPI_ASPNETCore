@@ -34,14 +34,13 @@ namespace PhotoContestAPI.Services
         {
             try
             {
-                ItemResponse<PhotoData> response = await this._container.ReadItemAsync<PhotoData>(id, new PartitionKey());
+                ItemResponse<PhotoData> response = await this._container.ReadItemAsync<PhotoData>(id, new PartitionKey(1));
                 return response.Resource;
             }
             catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
                 return null;
             }
-
         }
 
         public async Task<IEnumerable<PhotoData>> GetItemsAsync(string queryString)

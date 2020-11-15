@@ -25,7 +25,7 @@ namespace PhotoContestAPI.Services
 
         public BlobStorageService()
         {
-            this.accessKey = "DefaultEndpointsProtocol=https;AccountName=testblob726;AccountKey=DHNpgyNssSrD3iYb79dPKPPQZmGKN5PkcopZJLkFCGhG71XFZypmvpF8xnf1DSCjsmf6dXO2Oo+IR7CaWj+cng==;EndpointSuffix=core.windows.net";
+            this.accessKey = "DefaultEndpointsProtocol=https;AccountName=photocontestblob;AccountKey=mFh3ueSo24Gow1GbSSGFLifVEjA3CzYOlAYd5qUqD20SqIV21viBnrmUM8VzioYQ7DRwyifUUu8s0x27OZbPpA==;EndpointSuffix=core.windows.net";
         }
 
         public string UploadFileToBlob(string strFileName, byte[] fileData, string fileMimeType)
@@ -77,7 +77,7 @@ namespace PhotoContestAPI.Services
             {
                 CloudStorageAccount cloudStorageAccount = CloudStorageAccount.Parse(accessKey);
                 CloudBlobClient cloudBlobClient = cloudStorageAccount.CreateCloudBlobClient();
-                string strContainerName = "testblob726";
+                string strContainerName = "photocontestblob";
                 CloudBlobContainer cloudBlobContainer = cloudBlobClient.GetContainerReference(strContainerName);
                 string fileName = this.GenerateFileName(strFileName);
 

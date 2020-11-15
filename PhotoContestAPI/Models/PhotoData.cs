@@ -2,6 +2,7 @@
 namespace PhotoContestAPI.Models
 {
     using Newtonsoft.Json;
+    using System;
 
     public class PhotoData
     {
@@ -16,6 +17,18 @@ namespace PhotoContestAPI.Models
 
         [JsonProperty(PropertyName = "imgUrl")]
         public string ImgUrl { get; set; }
+
+        [JsonProperty(PropertyName = "imgUrlHighQuality")]
+        public string ImgUrlHighQuality { get; set; }
+
+        [JsonProperty(PropertyName = "imgUrlLowQuality")]
+        public string ImgUrlLowQuality { get; set; }
+
+        [JsonProperty(PropertyName = "votes")]
+        public int Votes { get; set; }
+
+        [JsonProperty(PropertyName = "submitDt")]
+        public DateTime SubmitDt { get; set; }
 
         [JsonProperty(PropertyName = "partition")]
         public int Partition { get; set; }
