@@ -57,7 +57,7 @@ namespace PhotoContestAPI.Services
             return results;
         }
 
-        public async Task UpdateItemAsync(string id, PhotoData photoData)
+        public async Task UpdateItemAsync(PhotoData photoData)
         {
             await this._container.UpsertItemAsync<PhotoData>(photoData, new PartitionKey(photoData.Partition));
         }
