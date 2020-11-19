@@ -107,14 +107,12 @@ namespace PhotoContestAPI.Controllers
 
         // POST api/<UploadPhotosController>
         [HttpPost]
-        public async Task<PhotoData> Post([FromForm] IFormFile file, [FromForm] string index, [FromForm] string author)
+        public async Task<PhotoData> Post([FromForm] IFormFile file, [FromForm] string index, [FromForm] string author, [FromForm] int contestWeek)
         {
             var fileName = file.FileName;
-
             var convertedIndex = Convert.ToInt32(index) + 1;
 
             PhotoData photoDataObject = new PhotoData();
-
             try
             {
                 byte[] fileBytes;
@@ -123,7 +121,6 @@ namespace PhotoContestAPI.Controllers
                 using (var ms = new MemoryStream())
                 {
                     file.CopyTo(ms);
-
                     fileBytes = ms.ToArray();
 
                     Tinify.Key = "NC86NBC6Qrjhp2GtQxC6k0l8Dbv17NZc"; //API Key
@@ -136,11 +133,9 @@ namespace PhotoContestAPI.Controllers
                 var mimeType = file.ContentType;
 
                 var blobStorageService = new BlobStorageService();
-
                 var url = blobStorageService.UploadFileToBlob(fileName, resultData, mimeType);
 
                 var source = Tinify.FromUrl(url);
-
                 var resized = source.Resize(new
                 {
                     method = "scale",
