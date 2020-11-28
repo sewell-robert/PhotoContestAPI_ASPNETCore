@@ -9,6 +9,9 @@ namespace PhotoContestAPI.Models
         [JsonProperty(PropertyName = "id")]
         public string Id { get; set; }
 
+        [JsonProperty(PropertyName = "uuid")]
+        public string UUID { get; set; }
+
         [JsonProperty(PropertyName = "author")]
         public string Author { get; set; }
 

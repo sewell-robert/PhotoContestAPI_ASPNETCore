@@ -28,7 +28,7 @@ namespace PhotoContestAPI.Controllers
 
             var takeAmount = (int)Math.Ceiling(totalPhotos / 4);
 
-            var results = response.OrderByDescending(p => p.Votes).Take(takeAmount).ToList();
+            var results = response.Where(x => x.Votes > 0).OrderByDescending(p => p.Votes).Take(takeAmount).ToList();
 
             //var results = response.OrderByDescending(x => x.Votes).GroupBy(p => p.ContestWeek).SelectMany(y => y.Take(2)).ToList();
 

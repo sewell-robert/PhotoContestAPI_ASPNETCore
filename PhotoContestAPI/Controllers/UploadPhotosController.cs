@@ -107,7 +107,7 @@ namespace PhotoContestAPI.Controllers
 
         // POST api/<UploadPhotosController>
         [HttpPost]
-        public async Task<PhotoData> Post([FromForm] IFormFile file, [FromForm] string index, [FromForm] string author, [FromForm] int contestWeek)
+        public async Task<PhotoData> Post([FromForm] IFormFile file, [FromForm] string index, [FromForm] string author, [FromForm] string uuid)
         {
             var fileName = file.FileName;
             var convertedIndex = Convert.ToInt32(index) + 1;
@@ -147,6 +147,7 @@ namespace PhotoContestAPI.Controllers
                 var photoData = new PhotoData
                 {
                     Id = convertedIndex.ToString(),
+                    UUID = uuid,
                     Author = author,
                     Description = "Test " + convertedIndex.ToString(),
                     ImgUrlHighQuality = url,
