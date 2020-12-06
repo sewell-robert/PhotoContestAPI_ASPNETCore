@@ -33,6 +33,9 @@ namespace PhotoContestAPI.Models
         [JsonProperty(PropertyName = "submitDt")]
         public DateTime SubmitDt { get; set; }
 
+        [JsonProperty(PropertyName = "contestWeek")]
+        public string ContestWeek { get; set; }
+
         [JsonProperty(PropertyName = "partition")]
         public int Partition { get; set; }
     }

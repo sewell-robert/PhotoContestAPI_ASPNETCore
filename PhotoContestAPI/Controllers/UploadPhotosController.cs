@@ -13,6 +13,7 @@ using Microsoft.Azure.Cosmos.Linq;
 using PhotoContestAPI.Services;
 using PhotoContestAPI.Models;
 using TinifyAPI;
+using PhotoContestAPI.Classes;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -73,9 +74,12 @@ namespace PhotoContestAPI.Controllers
         [HttpGet("{pageNumber}")]
         public async Task<List<PhotoData>> GetItemsAsync(int pageNumber)
         {
+            MiscCalculations miscCalculations = new MiscCalculations();
+            var contestWeek = miscCalculations.GetContestWeek();
+
             var results = await _cosmosDbService.GetItemsAsync("select * from c");
 
-            results = results.Reverse().ToList();
+            results = results.Where(p => p.ContestWeek == contestWeek).Reverse().ToList();
 
             var skip = 6 * (pageNumber - 1);
 
@@ -100,7 +104,12 @@ namespace PhotoContestAPI.Controllers
         [Route("/api/uploadphotos/count")]
         public async Task<int> GetCountAsync()
         {
+            MiscCalculations miscCalculations = new MiscCalculations();
+            var contestWeek = miscCalculations.GetContestWeek();
+
             var results = await _cosmosDbService.GetItemsAsync("select * from c");
+
+            results = results.Where(p => p.ContestWeek == contestWeek).Reverse();
 
             return results.Count();
         }
@@ -113,18 +122,20 @@ namespace PhotoContestAPI.Controllers
             var convertedIndex = Convert.ToInt32(index) + 1;
 
             PhotoData photoDataObject = new PhotoData();
+
             try
             {
                 byte[] fileBytes;
-                byte[] resultData;
+                //byte[] resultData;
                 //string byteArrayToString;
                 using (var ms = new MemoryStream())
                 {
                     file.CopyTo(ms);
                     fileBytes = ms.ToArray();
 
-                    Tinify.Key = "NC86NBC6Qrjhp2GtQxC6k0l8Dbv17NZc"; //API Key
-                    resultData = await Tinify.FromBuffer(fileBytes).ToBuffer(); //Compresses image only
+                    //These two lines compress the photo, but may not need to compress twice since we do it again down below with the Resize() method
+                    /*Tinify.Key = "NC86NBC6Qrjhp2GtQxC6k0l8Dbv17NZc";*/ //API Key
+                    /*resultData = await Tinify.FromBuffer(fileBytes).ToBuffer();*/ //Compresses image only
 
                     //byteArrayToString = Convert.ToBase64String(fileBytes);
                     // act on the Base64 data
@@ -133,17 +144,24 @@ namespace PhotoContestAPI.Controllers
                 var mimeType = file.ContentType;
 
                 var blobStorageService = new BlobStorageService();
-                var url = blobStorageService.UploadFileToBlob(fileName, resultData, mimeType);
+                var url = blobStorageService.UploadFileToBlob(fileName, fileBytes, mimeType);
+                //var url = blobStorageService.UploadFileToBlob(fileName, resultData, mimeType);
 
+                Tinify.Key = "NC86NBC6Qrjhp2GtQxC6k0l8Dbv17NZc";
                 var source = Tinify.FromUrl(url);
                 var resized = source.Resize(new
                 {
-                    method = "scale",
-                    width = 568
+                    //method = "scale",
+                    //width = 568
+
+                    method = "cover",
+                    width = 156,
+                    height = 156
                 });
                 var resultDataResized = await resized.ToBuffer();
                 var url2 = blobStorageService.UploadFileToBlob(fileName, resultDataResized, mimeType);
 
+                MiscCalculations miscCalculations = new MiscCalculations();
                 var photoData = new PhotoData
                 {
                     Id = convertedIndex.ToString(),
@@ -154,6 +172,7 @@ namespace PhotoContestAPI.Controllers
                     ImgUrlLowQuality = url2,
                     Votes = 0,
                     SubmitDt = DateTime.Now,
+                    ContestWeek = miscCalculations.GetContestWeek(),
                     Partition = 1
                 };
 
