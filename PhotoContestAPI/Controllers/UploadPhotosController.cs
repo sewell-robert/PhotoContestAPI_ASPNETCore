@@ -72,7 +72,8 @@ namespace PhotoContestAPI.Controllers
         // GET api/<UploadPhotosController>/page/4
         [Route("/api/uploadphotos/page/{pageNumber}")]
         [HttpGet("{pageNumber}")]
-        public async Task<List<PhotoData>> GetItemsAsync(int pageNumber)
+        //public async Task<List<PhotoData>> GetItemsAsync(int pageNumber)
+        public async Task<VBCreatedBundle> GetItemsAsync(int pageNumber)
         {
             MiscCalculations miscCalculations = new MiscCalculations();
             var contestWeek = miscCalculations.GetContestWeek();
@@ -97,22 +98,27 @@ namespace PhotoContestAPI.Controllers
                 }
             }
 
-            return photoList;
+            VBCreatedBundle bundle = new VBCreatedBundle();
+            bundle.PhotoCount = results.Count();
+            bundle.PhotoDataList = photoList;
+
+            return bundle;
         }
 
+        // Moved this code above
         // GET api/<UploadPhotosController>/action/count
-        [Route("/api/uploadphotos/count")]
-        public async Task<int> GetCountAsync()
-        {
-            MiscCalculations miscCalculations = new MiscCalculations();
-            var contestWeek = miscCalculations.GetContestWeek();
+        //[Route("/api/uploadphotos/count")]
+        //public async Task<int> GetCountAsync()
+        //{
+        //    MiscCalculations miscCalculations = new MiscCalculations();
+        //    var contestWeek = miscCalculations.GetContestWeek();
 
-            var results = await _cosmosDbService.GetItemsAsync("select * from c");
+        //    var results = await _cosmosDbService.GetItemsAsync("select * from c");
 
-            results = results.Where(p => p.ContestWeek == contestWeek).Reverse();
+        //    results = results.Where(p => p.ContestWeek == contestWeek).Reverse();
 
-            return results.Count();
-        }
+        //    return results.Count();
+        //}
 
         // POST api/<UploadPhotosController>
         [HttpPost]
